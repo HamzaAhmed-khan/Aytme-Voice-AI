@@ -1,0 +1,50 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: aytme-api-hpa
+  namespace: prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: aytme-api
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: AverageValue
+        averageValue: 512Mi
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: aytme-worker-hpa
+  namespace: prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: aytme-worker
+  minReplicas: 5
+  maxReplicas: 50
+  metrics:
+  - type: Object
+    object:
+      metric:
+        name: aytme_concurrent_rooms
+      describedObject:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: aytme-worker
+      target:
+        type: Value
+        value: "5" # Scale when one worker handles 5 rooms
