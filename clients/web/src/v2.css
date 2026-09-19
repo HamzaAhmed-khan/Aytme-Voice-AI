@@ -1,0 +1,166 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+
+
+:root {
+  --v2-bg: #f8fafc;
+  --v2-header: #ffffff;
+  --v2-accent: #4f46e5;
+  --v2-accent-hover: #4338ca;
+  --v2-text: #0f172a;
+  --v2-text-muted: #64748b;
+  --v2-border: #e2e8f0;
+  --v2-card-bg: #ffffff;
+}
+
+.v2-app {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--v2-bg);
+  color: var(--v2-text);
+  min-height: 100dvh;
+}
+
+.v2-header {
+  background-color: var(--v2-header);
+  border-radius: 0.5rem;
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--v2-border);
+}
+
+.v2-card {
+  background: var(--v2-card-bg);
+  border: 1px solid var(--v2-border);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.v2-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--v2-border);
+  border-radius: 0.375rem;
+  background-color: #ffffff;
+  outline: none;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.v2-input:focus {
+  border-color: var(--v2-accent);
+  box-shadow: 0 0 0 1px var(--v2-accent);
+}
+
+.v2-btn {
+  background-color: var(--v2-accent);
+  color: white;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.v2-btn:hover {
+  background-color: var(--v2-accent-hover);
+}
+
+.v2-btn-secondary {
+  background-color: #ffffff;
+  color: var(--v2-text);
+  border: 1px solid var(--v2-border);
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.v2-btn-secondary:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.v2-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--v2-text);
+  margin-bottom: 0.5rem;
+}
+
+.v2-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--v2-border);
+  background-color: #f8fafc;
+  color: var(--v2-text-muted);
+}
+
+.v2-badge-active {
+  background-color: #e0e7ff;
+  border-color: var(--v2-accent);
+  color: var(--v2-accent);
+}
+
+/* Base custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Responsive Utility Overrides */
+@media (max-width: 1024px) {
+  .v2-header {
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .v2-app {
+    padding: 0;
+  }
+  
+  .v2-card {
+    padding: 1rem;
+    border-radius: 0.375rem;
+  }
+  
+  .v2-btn, .v2-btn-secondary {
+    padding: 0.875rem 1rem;
+    font-size: 1rem; /* Better tap target */
+  }
+
+  .v2-input {
+    font-size: 1rem; /* Prevents auto-zoom on iOS */
+    padding: 0.875rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+    .v2-header {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+}
