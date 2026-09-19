@@ -1,0 +1,63 @@
+{
+    "annotations": {
+        "list": [],
+        "enable": true,
+        "hide": false
+    },
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": 1,
+    "links": [],
+    "panels": [
+        {
+            "title": "Real-time Concurrent Rooms",
+            "type": "gauge",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 0
+            },
+            "targets": [
+                {
+                    "expr": "aytme_concurrent_rooms",
+                    "format": "time_series",
+                    "intervalFactor": 1,
+                    "refId": "A"
+                }
+            ]
+        },
+        {
+            "title": "Translation Latency (seconds)",
+            "type": "heatmap",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 0
+            },
+            "targets": [
+                {
+                    "expr": "rate(aytme_worker_processing_latency_seconds_bucket[5m])",
+                    "format": "heatmap",
+                    "refId": "A"
+                }
+            ]
+        }
+    ],
+    "schemaVersion": 22,
+    "style": "dark",
+    "tags": [
+        "aytme"
+    ],
+    "templating": {
+        "list": []
+    },
+    "time": {
+        "from": "now-6h",
+        "to": "now"
+    },
+    "timezone": "",
+    "title": "AYTME System Performance"
+}
