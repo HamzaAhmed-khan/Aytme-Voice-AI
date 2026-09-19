@@ -1,0 +1,117 @@
+stages:
+  - test
+  - build
+  - deploy
+  - setup_paypal
+
+# ─── Frontend: Circular-dep check + unminified build smoke test ──────────────
+test_frontend:
+  stage: test
+  image: node:20-slim
+  cache:
+    key: frontend-$CI_COMMIT_REF_SLUG
+    paths:
+      - clients/web/node_modules/
+  script:
+    - cd clients/web
+    - npm ci --prefer-offline
+    # Fail immediately if any circular imports exist in app source
+    - npx madge --circular --extensions js,jsx src/
+    # Unminified build: exposes Rollup "Circular chunk" warnings as hard errors
+    - npx vite build --minify false 2>&1 | tee /tmp/build_unminified.log
+    - |
+      if grep -q "Circular chunk" /tmp/build_unminified.log; then
+        echo "ERROR: Circular chunk dependency detected — TDZ crash at runtime is guaranteed."
+        exit 1
+      fi
+    # Production build (minified)
+    - npx vite build
+
+variables:
+  DOCKER_IMAGE_API: $CI_REGISTRY_IMAGE/api
+  DOCKER_IMAGE_WORKER: $CI_REGISTRY_IMAGE/worker
+
+test_job:
+  stage: test
+  image: python:3.11-slim
+  services:
+    - name: redis:alpine
+      alias: redis
+  variables:
+    PAYPAL_CLIENT_ID: "test_paypal_id"
+    PAYPAL_SECRET: "test_paypal_secret"
+    PAYPAL_WEBHOOK_ID: "test_webhook_id"
+    DATABASE_URL: "sqlite+aiosqlite:///test.db"
+    PYTHONPATH: ".:services/api"
+  script:
+    - apt-get update && apt-get install -y libpq-dev build-essential
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - rm -rf app
+    - mv services/api app
+    - export PYTHONPATH=$CI_PROJECT_DIR
+    - python -m pytest -v -rA --tb=short -c app/pytest.ini app/tests
+
+build_api:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build --target api -t $DOCKER_IMAGE_API:$CI_COMMIT_REF_SLUG -t $DOCKER_IMAGE_API:latest .
+    - docker push $DOCKER_IMAGE_API:$CI_COMMIT_REF_SLUG
+    - docker push $DOCKER_IMAGE_API:latest
+
+build_worker:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build --target worker -t $DOCKER_IMAGE_WORKER:$CI_COMMIT_REF_SLUG -t $DOCKER_IMAGE_WORKER:latest .
+    - docker push $DOCKER_IMAGE_WORKER:$CI_COMMIT_REF_SLUG
+    - docker push $DOCKER_IMAGE_WORKER:latest
+
+deploy_to_digitalocean:
+  stage: deploy
+  image:
+    name: digitalocean/doctl:latest
+    entrypoint: [""]
+  script:
+    - /app/doctl auth init -t $DO_ACCESS_TOKEN
+    - /app/doctl apps update $DO_APP_ID --spec digitalocean-spec.yaml
+  only:
+    - main
+
+# ─── Manual: Seed PayPal Plans into Production DB ───────────────────────────
+# Trigger this manually from GitLab UI → CI/CD → Pipelines → Run pipeline
+# Required GitLab CI/CD Secret Variables (Settings → CI/CD → Variables):
+#   PAYPAL_CLIENT_ID_LIVE   (your PayPal live client ID)
+#   PAYPAL_SECRET_LIVE      (your PayPal live secret)
+#   DATABASE_URL_PROD       (production postgres connection string)
+seed_paypal_plans:
+  stage: setup_paypal
+  image: python:3.11-slim
+  when: manual
+  allow_failure: true
+  # REQUIRED: GitLab Settings -> CI/CD -> Variables -> Add these 3 keys:
+  # PAYPAL_CLIENT_ID_LIVE
+  # PAYPAL_SECRET_LIVE
+  # DATABASE_URL_PROD
+  variables:
+    PAYPAL_CLIENT_ID: $PAYPAL_CLIENT_ID_LIVE
+    PAYPAL_SECRET:    $PAYPAL_SECRET_LIVE
+    DATABASE_URL:     $DATABASE_URL_PROD
+    PAYPAL_ENV:       "live"
+  script:
+    - apt-get update -qq && apt-get install -y -qq libpq-dev build-essential
+    - pip install -q httpx sqlalchemy asyncpg python-dotenv aiosqlite
+    - echo "Checking current plan state in production DB..."
+    - python scripts/setup_paypal_plans.py --check-db
+    - echo "Creating/updating PayPal plans in production..."
+    - python scripts/setup_paypal_plans.py
+    - echo "Done! Restart API service to pick up new configuration."
+  only:
+    - main
